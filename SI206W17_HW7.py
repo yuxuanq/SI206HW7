@@ -64,8 +64,7 @@ def get_user_tweets(key_words):
 		py_obj = CACHE_DICTION[key_words]
 	else:
 		print("get info from the web for ", key_words)
-		response = api.user_timeline(id = key_words)
-		py_obj = response
+		py_obj = api.user_timeline(id = key_words)
 		CACHE_DICTION[key_words] = py_obj
 		f = open(CACHE_FNAME, 'w')
 		f.write(json.dumps(CACHE_DICTION))
@@ -151,31 +150,46 @@ cur.execute(rts_query)
 more_than_2_rts = cur.fetchall()
 
 
-# Select all of the TEXT values of the tweets that are retweets of another account (i.e. have "RT" at the beginning of the tweet text). Save the FIRST ONE from that group of text values in the variable first_rt. Note that first_rt should contain a single string value, not a tuple.
-
+# Select all of the TEXT values of the tweets that are retweets of another account (i.e. have "RT" at the beginning of the tweet text).
+# Save the FIRST ONE from that group of text values in the variable first_rt. Note that first_rt should contain a single string value, not a tuple.
+first_rt_query = "SELECT tweet_text from Tweets WHERE tweet_text LIKE 'RT%'"
+cur.execute(first_rt_query)
+first_rt = cur.fetchone()[0]
 
 
 # Finally, done with database stuff for a bit: write a line of code to close the cursor to the database.
 
-
+conn.close()
 
 ## [PART 3] - Processing data
 
-# Define a function get_twitter_users that accepts a string as in put and returns a SET of the _twitter screennames_ of each twitter user who was mentioned in that string. 
-
-# Note that the syntax for mentions in a tweet is that the username is preceded by an "@" character, e.g. "@umsi" or "@aadl", and cannot contain any punctuation besides underscores -- that's how to determine what user names are mentioned. (e.g. @hello? is just the username "hello", but @programmer_at_umsi is "programmer_at_umsi"). 
-
-#re.match and getting the 0th group from the MatchObject may be useful for you here... reminder: http://stackoverflow.com/questions/15340582/python-extract-pattern-matches
-
-# You may assume for this problem that there will be no usernames directly in order, e.g. "@hello@goodbye", only "@hello and @goodbye" for example. We will iterate on this later!
-
-# Also note that the SET type is what this function should return, NOT a list or tuple. We looked at very briefly at sets when we looked at set comprehensions last week. In a Python 3 set, which is a special data type, it's a lot like a combination of a list and a dictionary: no key-value pairs, BUT each element in a set is by definition unique. You can't have duplicates.
-
-# If you want to challenge yourself here -- this function definition (what goes under the def statement) CAN be written in one line! Definitely, definitely fine to write it with multiple lines, too, which will be much easier and clearer.
+# Define a function get_twitter_users that accepts a string as in put and returns a SET of the _twitter screennames_
+# of each twitter user who was mentioned in that string.
 
 
+# Note that the syntax for mentions in a tweet is that the username is preceded by an "@" character, e.g. "@umsi" or "@aadl",
+# and cannot contain any punctuation besides underscores -- that's how to determine what user names are mentioned.
+# (e.g. @hello? is just the username "hello", but @programmer_at_umsi is "programmer_at_umsi").
 
+#re.match and getting the 0th group from the MatchObject may be useful for you here...
+# reminder: http://stackoverflow.com/questions/15340582/python-extract-pattern-matches
 
+# You may assume for this problem that there will be no usernames directly in order, e.g. "@hello@goodbye", only "@hello
+# and @goodbye" for example. We will iterate on this later!
+
+# Also note that the SET type is what this function should return, NOT a list or tuple. We looked at very briefly at sets
+# when we looked at set comprehensions last week. In a Python 3 set, which is a special data type, it's a lot like a combination of a list and
+# a dictionary: no key-value pairs, BUT each element in a set is by definition unique. You can't have duplicates.
+
+# If you want to challenge yourself here -- this function definition (what goes under the def statement) CAN be written in one line!
+# Definitely, definitely fine to write it with multiple lines, too, which will be much easier and clearer.
+
+def get_twitter_users(string):
+	names = re.findall(r'(@([A-z]|[0-9]|_)*)', string)
+	name_set = set()
+	for i in names:
+		name_set.add(i[0].strip('@'))
+	return name_set
 
 #########
 print("*** OUTPUT OF TESTS BELOW THIS LINE ***")
@@ -212,17 +226,17 @@ class PartTwo(unittest.TestCase):
 		self.assertEqual(first_rt[:2],"RT")
 	def test7(self):
 		self.assertTrue(set([x[-1] > 2 for x in more_than_2_rts]) in [{},{True}])
-#
-# class PartThree(unittest.TestCase):
-# 	def test1(self):
-# 		self.assertEqual(get_twitter_users("RT @umsi and @student3 are super fun"),{'umsi', 'student3'})
-# 	def test2(self):
-# 		self.assertEqual(get_twitter_users("the SI 206 people are all pretty cool"),set())
-# 	def test3(self):
-# 		self.assertEqual(get_twitter_users("@twitter_user_4, what did you think of the comment by @twitteruser5?"),{'twitter_user_4', 'twitteruser5'})
-# 	def test4(self):
-# 		self.assertEqual(get_twitter_users("hey @umich, @aadl is pretty great, huh? @student1 @student2"),{'aadl', 'student2', 'student1', 'umich'})
-#
+
+class PartThree(unittest.TestCase):
+	def test1(self):
+		self.assertEqual(get_twitter_users("RT @umsi and @student3 are super fun"),{'umsi', 'student3'})
+	def test2(self):
+		self.assertEqual(get_twitter_users("the SI 206 people are all pretty cool"),set())
+	def test3(self):
+		self.assertEqual(get_twitter_users("@twitter_user_4, what did you think of the comment by @twitteruser5?"),{'twitter_user_4', 'twitteruser5'})
+	def test4(self):
+		self.assertEqual(get_twitter_users("hey @umich, @aadl is pretty great, huh? @student1 @student2"),{'aadl', 'student2', 'student1', 'umich'})
+
 
 if __name__ == "__main__":
 	unittest.main(verbosity=2)
